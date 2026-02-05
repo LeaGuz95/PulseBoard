@@ -64,10 +64,8 @@ class SoundboardService:
         
         # Cargar si no está cargado
         self.audio_engine.load_sound(sound.id, sound.file_path)
-        
-        # Reproducir con configuración
-        loops = -1 if sound.loop else 0
-        self.audio_engine.play(sound.id, volume=sound.volume, loops=loops)
+             
+        self.audio_engine.play(sound.id, volume=sound.volume, loop=0)
     
     def _handle_StopSound(self, cmd: commands.StopSound):
         """Detiene un sonido"""
@@ -89,13 +87,22 @@ class SoundboardService:
         self._save_config()
     
     def _handle_ToggleLoop(self, cmd: commands.ToggleLoop):
-        """Alterna el loop de un sonido"""
         sound = self.soundboard.get_sound(cmd.sound_id)
         if not sound:
-            raise ValueError(f"Sound {cmd.sound_id} not found")
-        
+            raise ValueError("Sound not found")
+
+        # 1. Cambiar estado de dominio
         sound.toggle_loop()
-        self._save_config()
+
+        # 2. Reiniciar reproducción en loop
+        self.audio_engine.stop(sound.id)
+
+        self.audio_engine.play(
+            sound.id,
+            volume=sound.volume,
+            loop=sound.loop
+        )
+
     
     def _handle_AssignHotkey(self, cmd: commands.AssignHotkey):
         """Asigna un hotkey a un sonido"""
